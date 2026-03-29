@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Péndulo de Newton — Simulación con Ejes T</title>
+  <style>
+    :root {
+      --bg1: #0f1724;
+      --bg2: #0b3b6f;
+      --accent: #00cfff;
+      --gold: #fbff00ad;
+      --panel: rgba(255, 255, 255, 0.04);
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      color: #e6eef8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      text-align: center;
+      padding: 18px 8px;
+    }
+
+    h1 {
+      color: var(--accent);
+      margin: 6px 0;
+    }
+
+    .container {
+      width: 1000px;
+      max-width: calc(100% - 24px);
+    }
+
+    #canvas-wrap {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0.02));
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin: 10px 0 18px;
+      background: var(--panel);
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    .controls-left {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .control {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 8px 10px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      min-width: 120px;
+      color: #dbeafe;
+    }
+
+    .control label {
+      font-size: 13px;
+      color: #cfe8ff;
+      margin-bottom: 6px;
+    }
+
+    .control input[type="number"],
+    .control input[type="range"] {
+      width: 100%;
+      background: transparent;
+      color: #fff;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button {
+      background: var(--accent);
+      border: none;
+      color: #001;
+      font-weight: 700;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: var(--gold);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th,
+    td {
+      padding: 8px 6px;
+      text-align: center;
+      font-size: 13px;
+      color: #fff;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    th {
+      background: var(--accent);
+      color: #001;
+      font-weight: 700;
+    }
+
+    #teoria {
+      margin-top: 16px;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 14px;
+      border-radius: 10px;
+      color: #e9f2ff;
+      text-align: justify;
+    }
+
+    @media(max-width:820px) {
+      .controls {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .controls-left {
+        justify-content: center;
+      }
+
+      .buttons {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="container">
+    <h1>Péndulo de Newton — Simulación</h1>
+    <div style="color:#cfffe794">Plano cartesiano y demostracion de pendulo armonico 
+      dinámica.</div>
+  </header>
+
+  <main class="container">
+    <div id="canvas-wrap">
+      <canvas id="canvas" width="1000" height="520"></canvas>
+    </div>
+
+    <div class="controls">
+      <div class="controls-left">
+        <div class="control">
+          <label>Nº péndulos</label>
+          <input id="num" type="number" min="2" max="12" value="5">
+        </div>
+
+        <div class="control">
+          <label>Separación (m)</label>
+          <input id="sep" type="number" min="0.08" max="0.6" step="0.01" value="0.28">
+        </div>
+
+        <div class="control">
+          <label>Longitud cuerda (m)</label>
+          <input id="len" type="number" min="0.3" max="3" step="0.05" value="1.0">
+        </div>
+
+        <div class="control">
+          <label>Ángulo inicial (°) - solo primer péndulo</label>
+          <input id="amp" type="number" min="1" max="60" step="1" value="25">
+        </div>
+
+        <div class="control">
+          <label>Gravedad (m/s²)</label>
+          <input id="g" type="number" min="0.5" max="20" step="0.1" value="9.81">
+        </div>
+
+        <div class="control">
+          <label>Velocidad simulación (x)</label>
+          <input id="speed" type="number" min="0.1" max="3" step="0.1" value="1">
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button id="start">▶ Iniciar</button>
+        <button id="pause">⏸ Pausa</button>
+        <button id="reset" class="secondary">↺ Reiniciar</button>
+      </div>
+    </div>
+
+    <table id="tabla">
+      <thead>
+        <tr>
+          <th>Péndulo</th>
+          <th>Ángulo (°)</th>
+          <th>ω (rad/s)</th>
+          <th>v_x (m/s)</th>
+          <th>Oscilaciones (Hz)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div id="teoria">
+      <h2 style="color:var(--gold); margin-top:0">Resumen y Teoría</h2>
+      <p>
+        Este experimento reproduce un <strong>Péndulo de Newton</strong>: varias bolas idénticas suspendidas de una
+        barra.
+        Al elevar y soltar la bola en un extremo, su energía potencial se convierte en energía cinética;
+        cuando choca con las otras bolas, la energía y el momento se transmiten hacia el extremo opuesto.
+        Con colisiones elásticas entre masas iguales, la transferencia visible es casi completa.
+      </p>
+      <p>
+        En la simulación usamos ecuaciones del péndulo simple para el movimiento (θ'' = - (g/L) sin θ) y un
+        tratamiento de colisiones aproximado: cuando dos masas (bolas) entran en contacto, intercambiamos la componente
+        horizontal de su velocidad según colisión elástica 1D (masas iguales). Esto produce el efecto característico
+        de transferencia de energía del Péndulo de Newton sin modelar contactos complejos ni deformaciones.
+      </p>
+      <p>
+        La tabla muestra en tiempo real: el ángulo (en grados), la velocidad angular ω, la componente horizontal de la
+        velocidad (v_x) y la frecuencia de oscilación (Hz) estimada por detección de cruces de fase.
+      </p>
+    </div>
+  </main>
+
+  <script>
+    /* ---------------------------
+      Simulación: Péndulos acoplados
+       - Colisiones elásticas en contacto (intercambio vx)
+       - Ejes en T volcada (eje X arriba, eje Y izquierda)
+       - Tabla dinámica y cálculo de frecuencia (Hz)
+    ----------------------------*/
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const numInput = document.getElementById('num');
+    const sepInput = document.getElementById('sep');
+    const lenInput = document.getElementById('len');
+    const ampInput = document.getElementById('amp');
+    const gInput = document.getElementById('g');
+    const speedInput = document.getElementById('speed');
+    const startBtn = document.getElementById('start');
+    const pauseBtn = document.getElementById('pause');
+    const resetBtn = document.getElementById('reset');
+    const tablaBody = document.querySelector('#tabla tbody');
+
+    let escala = 100; // px por metro
+    let dt = 0.016; // paso de integración base (s)
+    let running = false;
+    let raf = null;
+    let tiempo = 0;
+
+    // pendulos data
+    let pendulos = []; // each: { x0,y0,L,r,theta,omega, mass, lastZeroTimes:[], lastThetaSign }
+
+    function crearSistema() {
+      pendulos = [];
+      tiempo = 0;
+      const n = Math.max(2, Math.min(12, parseInt(numInput.value)));
+      const sep = parseFloat(sepInput.value); // m
+      const L = parseFloat(lenInput.value);   // m
+      const ampDeg = parseFloat(ampInput.value); // deg for first bob
+      const g = parseFloat(gInput.value);
+
+      // anchor (barra) se coloca justo debajo del eje X, que dibujamos a y=marginTop
+      const marginLeft = 60; // espacio para regla Y
+      const marginTop = 40;  // eje X y
+      // center the total width
+      const totalWidth = (n - 1) * sep * escala;
+      const startX = (canvas.width - totalWidth) / 2;
+
+      for (let i = 0; i < n; i++) {
+        const x0 = startX + i * sep * escala;
+        const y0 = marginTop + 0; // barra horizontal justo bajo eje X
+        const r = 14; // visual radius px
+        pendulos.push({
+          x0, y0, L, r,
+          theta: (i === 0 ? -ampDeg * Math.PI / 180 : 0),
+          omega: 0,
+          mass: 1,
+          lastZeroTimes: [], // times (s) when theta crossed 0 with omega>0
+          lastThetaSign: Math.sign(i === 0 ? -ampDeg : 0),
+        });
+      }
+      actualizarTabla(); draw();
+    }
+
+    // física: integración simple (Symplectic/Euler semi-implicit)
+    function stepSimulation(dtStep) {
+      const g = parseFloat(gInput.value);
+      // integrate pendulums
+      for (let p of pendulos) {
+        // angular accel
+        const alpha = -(g / p.L) * Math.sin(p.theta);
+        // semi-implicit Euler
+        p.omega += alpha * dtStep;
+        p.theta += p.omega * dtStep;
+      }
+
+      // manejar colisiones por contacto entre bolas vecinas
+      // calculamos posiciones y velocidades lineales en x; si dist < sum radii -> colision
+      for (let i = 0; i < pendulos.length - 1; i++) {
+        const A = pendulos[i];
+        const B = pendulos[i + 1];
+
+        const Ax = A.x0 + A.L * escala * Math.sin(A.theta);
+        const Ay = A.y0 + A.L * escala * Math.cos(A.theta);
+        const Bx = B.x0 + B.L * escala * Math.sin(B.theta);
+        const By = B.y0 + B.L * escala * Math.cos(B.theta);
+
+        const dx = Bx - Ax;
+        const dy = By - Ay;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const minDist = A.r + B.r;
+
+        if (dist < minDist) {
+          // velocidad tangencial -> componente horizontal aproximada
+          // v_tangent = omega * L (direction tangent). Approximate vx = omega * L * cos(theta)
+          // This projects tangent velocity to x axis (reasonable for small angles).
+          const cosA = Math.cos(A.theta) || 1e-6;
+          const cosB = Math.cos(B.theta) || 1e-6;
+          let vxA = A.omega * A.L * cosA;
+          let vxB = B.omega * B.L * cosB;
+
+          // 1D elastic collision along x direction between equal masses -> swap vx
+          const vxA_after = vxB;
+          const vxB_after = vxA;
+
+          // convert back to angular velocities (safety: avoid dividing by very small)
+          A.omega = vxA_after / (A.L * cosA || 1e-6);
+          B.omega = vxB_after / (B.L * cosB || 1e-6);
+
+          // separate slightly to avoid sticking
+          const overlap = (minDist - dist);
+          const ux = dx / (dist || 1e-6);
+          const uy = dy / (dist || 1e-6);
+          // push them along line of centers a bit (visual only)
+          // We adjust angles to reflect small separation change:
+          const sepAdjust = overlap / 2;
+          // approximate delta theta by horizontal shift / (L*esc)
+          const adjA = -(sepAdjust * ux) / (A.L * escala);
+          const adjB = (sepAdjust * ux) / (B.L * escala);
+          A.theta += adjA;
+          B.theta += adjB;
+        }
+      }
+
+      tiempo += dtStep;
+      // detectar cruces de fase para frecuencia (solo cuentan cruces theta 0 con omega>0)
+      for (let idx = 0; idx < pendulos.length; idx++) {
+        const p = pendulos[idx];
+        const prevSign = p.lastThetaSign;
+        const signNow = Math.sign(p.theta) || 0;
+        // detect crossing from negative to non-negative with positive omega
+        if (prevSign < 0 && signNow >= 0 && p.omega > 0) {
+          p.lastZeroTimes.push(tiempo);
+          // keep only recent 6 crossings
+          if (p.lastZeroTimes.length > 6) p.lastZeroTimes.shift();
+        }
+        p.lastThetaSign = signNow;
+      }
+    }
+
+    // Dibujo: ejes en T volcada, regla Y izq, eje X arriba, barra y péndulos
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // styles
+      ctx.save();
+      // background grid subtle
+      ctx.fillStyle = "rgba(255,255,255,0.01)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // parameters for T
+      const marginLeft = 60; // rule Y area
+      const axisTop = 40;    // y position for axis X
+      const axisRight = canvas.width - 40;
+
+      // draw axis X (top horizontal)
+      ctx.strokeStyle = "rgba(200,220,255,0.12)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(marginLeft, axisTop);
+      ctx.lineTo(axisRight, axisTop);
+      ctx.stroke();
+
+      // marks X in meters (we compute meter-per-pixel as escala)
+      ctx.fillStyle = "#dbeafe";
+      ctx.font = "12px Arial";
+      // compute leftmost meter coordinate: we placed anchors centered, so find leftmost anchor
+      if (pendulos.length > 0) {
+        const leftAnchor = pendulos[0].x0;
+        // define reference meter 0 at leftAnchor rounded to nearest meter
+        // but simpler: mark positions every 0.5 m across canvas from marginLeft
+        const stepM = 0.5;
+        const pixelsPerM = escala;
+        for (let i = 0; i < 20; i++) {
+          const x = marginLeft + i * stepM * pixelsPerM;
+          if (x > axisRight) break;
+          ctx.beginPath();
+          ctx.moveTo(x, axisTop - 6);
+          ctx.lineTo(x, axisTop + 6);
+          ctx.stroke();
+          // label in meters relative to left border margin (approx)
+          const meters = ((x - marginLeft) / pixelsPerM).toFixed(2);
+          ctx.fillText(`${meters} m`, x - 14, axisTop - 10);
+        }
+      }
+
+      // draw axis Y (left vertical)
+      ctx.beginPath();
+      ctx.moveTo(marginLeft, axisTop);
+      ctx.lineTo(marginLeft, canvas.height - 20);
+      ctx.stroke();
+
+      // marks Y
+      ctx.font = "12px Arial";
+      const stepY = 0.25; // m
+      for (let m = 0; m < (canvas.height / escala) + 1; m += stepY) {
+        const y = axisTop + m * escala;
+        if (y > canvas.height - 20) break;
+        ctx.beginPath();
+        ctx.moveTo(marginLeft - 6, y);
+        ctx.lineTo(marginLeft + 6, y);
+        ctx.stroke();
+        ctx.fillText(`${m.toFixed(2)} m`, 6, y + 4);
+      }
+
+      // draw horizontal bar (from first anchor left of first to last anchor right)
+      if (pendulos.length > 0) {
+        const barLeft = pendulos[0].x0 - 40;
+        const barRight = pendulos[pendulos.length - 1].x0 + 40;
+        ctx.strokeStyle = "#ffd166";
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(barLeft, axisTop + 6); // slight below axis X
+        ctx.lineTo(barRight, axisTop + 6);
+        ctx.stroke();
+      }
+
+      // draw each pendulum (strings and balls)
+      for (let i = 0; i < pendulos.length; i++) {
+        const p = pendulos[i];
+        const px = p.x0 + p.L * escala * Math.sin(p.theta);
+        const py = p.y0 + p.L * escala * Math.cos(p.theta);
+
+        // line (string)
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(0,204,255,0.9)";
+        ctx.lineWidth = 2;
+        ctx.moveTo(p.x0, p.y0);
+        ctx.lineTo(px, py);
+        ctx.stroke();
+
+        // ball
+        ctx.beginPath();
+        ctx.fillStyle = "#ffd166";
+        ctx.arc(px, py, p.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(0,0,0,0.15)";
+        ctx.stroke();
+
+        // label
+        ctx.fillStyle = "#e6eef8";
+        ctx.font = "12px Arial";
+        ctx.fillText(`P${i + 1}`, px - 10, py - p.r - 6);
+      }
+
+      ctx.restore();
+    }
+
+    // Tabla dinámica: ángulo°, ω, v_x, frecuencia (Hz)
+    function actualizarTabla() {
+      tablaBody.innerHTML = "";
+      for (let i = 0; i < pendulos.length; i++) {
+        const p = pendulos[i];
+        const angDeg = (p.theta * 180 / Math.PI).toFixed(2);
+        const omega = p.omega.toFixed(3);
+        // compute vx approx: vx = omega * L * cos(theta)
+        const vx = (p.omega * p.L * Math.cos(p.theta)).toFixed(3);
+
+        // frequency estimate from zero crossings (times in lastZeroTimes)
+        let freq = "-";
+        if (p.lastZeroTimes.length >= 2) {
+          // compute average period between consecutive recorded same-phase zero crossings
+          let diffs = [];
+          for (let j = 1; j < p.lastZeroTimes.length; j++) diffs.push(p.lastZeroTimes[j] - p.lastZeroTimes[j - 1]);
+          const avgPeriod = diffs.reduce((a, b) => a + b, 0) / diffs.length;
+          if (avgPeriod > 1e-6) freq = (1 / avgPeriod).toFixed(3);
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>P${i + 1}</td><td>${angDeg}</td><td>${omega}</td><td>${vx}</td><td>${freq}</td>`;
+        tablaBody.appendChild(tr);
+      }
+    }
+
+    // main loop
+    function loop() {
+      if (!running) return;
+      const speed = Math.max(0.1, parseFloat(speedInput.value));
+      // adaptive substeps for stability: split dt into n steps depending on speed
+      const steps = Math.max(1, Math.round((speed) * 2));
+      const dtStep = dt * speed / steps;
+      for (let s = 0; s < steps; s++) {
+        stepSimulation(dtStep);
+      }
+      draw();
+      actualizarTabla();
+      raf = requestAnimationFrame(loop);
+    }
+
+    // controls
+    startBtn.addEventListener('click', () => {
+      if (!running) {
+        running = true;
+        cancelAnimationFrame(raf);
+        loop();
+      }
+    });
+    pauseBtn.addEventListener('click', () => {
+      running = !running;
+      if (running) { cancelAnimationFrame(raf); loop(); }
+    });
+    resetBtn.addEventListener('click', () => {
+      running = false;
+      cancelAnimationFrame(raf);
+      crearSistema();
+    });
+
+    // update system if parameters change while paused
+    [numInput, sepInput, lenInput, ampInput, gInput, speedInput].forEach(el => {
+      el.addEventListener('change', () => {
+        // recreate system but preserve running state: if running, apply changes live
+        const wasRunning = running;
+        running = false;
+        cancelAnimationFrame(raf);
+        crearSistema();
+        if (wasRunning) { running = true; loop(); }
+      });
+    });
+
+    // initial
+    crearSistema();
+
+    /* Nota sobre física y colisiones:
+       - El intercambio de energía se aproxima intercambiando la componente horizontal
+         de la velocidad (v_x) al detectar contacto entre dos bolas (dist < r1 + r2).
+       - Esto reproduce visualmente y en gran medida la transferencia característica del
+         Péndulo de Newton (masas iguales).
+       - La dinámica del péndulo está integrada con Euler semi-implícito para estabilidad.
+    */
+  </script>
+</body>
+
+</html>
